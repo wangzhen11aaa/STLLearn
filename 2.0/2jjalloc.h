@@ -20,6 +20,7 @@ inline T* _allocate(ptrdiff_t size, T*){
     // 0 means null
     //std::set_new_handler(0);
     std::set_new_handler(no_memory);
+    std::cout<< "Invoke operator new method " << std::endl;
     T* tmp = (T*)(::operator new((size_t)(size * sizeof(T))));
 
     if (tmp == 0){
@@ -29,9 +30,19 @@ inline T* _allocate(ptrdiff_t size, T*){
     return tmp;
 }
 
+// This method use operator delete[] function.
 template<class T>
 inline void _deallocate(T* buffer){
-    ::operator delete(buffer);
+    ::operator delete[] (buffer);
+}
+
+template<class T>
+inline void _deallocate(T* buffer, size_t n){
+    std::cout << "n in _deallocate() : " << n << std::endl;
+    // for (int i = 0; i<n; i++){
+    //     std::cout << "i : " << i << std::endl;
+    //     ::operator delete(&buffer[i]);
+    // }
 }
 
 // Use placement new.
@@ -67,11 +78,13 @@ public:
     // hint used for locality ref. 
     // const void* means 万能类型
     pointer allocate(size_type n, const void* hint = 0){
+        std::cout << "invoke allocate method " << std::endl;
         return _allocate((difference_type)n, (pointer)0);
     }
 
-    void deallocate(pointer p, size_type n){_deallocate(p);}
-    
+    //void deallocate(pointer p, size_type n){_deallocate(p, n);}
+
+    void deallocate(pointer p, size_type n){_deallocate(p);} 
     // 目前没有弄懂在vector模板中哪里调用的construct方法。
     void construct(pointer p, const T& value){
         std::cout << "construct is invoked" << std::endl;
@@ -80,7 +93,7 @@ public:
         _construct(p, value);
     }
 
-    void destory(pointer p){_destroy(p);}
+    void destory(pointer p){_deallocate(p);}
     pointer address(reference x) {return (pointer) &x;}
     const_pointer const_address(const_reference x){return (const_pointer) &x;}
 
